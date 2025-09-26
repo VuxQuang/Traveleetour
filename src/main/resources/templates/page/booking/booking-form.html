@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt tour - Travelee</title>
+    <link rel="stylesheet" th:href="@{/page/css/homepage.css}">
+    <link rel="stylesheet" th:href="@{/page/css/booking-form.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <div th:replace="~{page/fragments/header :: header}"></div>
+
+    <main class="booking-container">
+        <div class="booking-content">
+            <!-- Tour Info -->
+            <div class="tour-info-card">
+                <div class="tour-image">
+                    <img th:src="${tour.images != null and tour.images.size() > 0 ? tour.images.iterator().next().imageUrl : '/page/imgs/default-tour.jpg'}" 
+                         th:alt="${tour.title}">
+                </div>
+                <div class="tour-details">
+                    <div class="tour-title">
+                        <h2 th:text="${tour.title}">Tour Title</h2>
+                    </div>
+                    
+                    <div class="tour-info-row">
+                        <div class="tour-duration">
+                            <i class="fas fa-clock"></i>
+                            <span th:text="${tour.duration + ' ngày'}">Duration</span>
+                        </div>
+                        <div class="tour-route">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span th:text="${tour.departure} + ' → ' + ${tour.destination}">Route</span>
+                        </div>
+                    </div>
+                    
+                    <div class="selected-schedule">
+                        <h4>Lịch đã chọn:</h4>
+                        <p th:if="${selectedSchedule != null}">
+                            <i class="fas fa-calendar"></i>
+                            <span th:text="${#temporals.format(selectedSchedule.departureDate, 'dd/MM/yyyy')}">Departure Date</span>
+                            <span th:if="${selectedSchedule.specialPrice != null}" class="special-price">
+                                - Giá khuyến mãi: <span th:text="${#numbers.formatDecimal(selectedSchedule.specialPrice, 0, 'COMMA', 0, 'POINT') + '₫'}">Special Price</span>
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <form th:action="@{/page/booking/create}" th:object="${bookingRequest}" method="post" class="booking-form">
+                <!-- Hidden fields -->
+                <input type="hidden" th:field="*{tourId}" th:value="${tour.id}">
+                <input type="hidden" th:field="*{scheduleId}" th:value="${selectedSchedule.id}">
+                <input type="hidden" th:field="*{discountAmount}" th:value="${discountAmount}">
+
+                <!-- Customer Information -->
+                <div class="form-section">
+                    <h3><i class="fas fa-user"></i> Thông tin người đặt</h3>
+                    <div th:if="${user != null}" class="user-info-notice">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Thông tin được lấy từ tài khoản đã đăng nhập</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="customerName">Họ tên *</label>
+                            <input type="text" id="customerName" th:field="*{customerName}" 
+                                   th:readonly="${user != null}" required>
+                            <span class="error" th:if="${#fields.hasErrors('customerName')}" th:errors="*{customerName}"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="customerEmail">Email *</label>
+                            <input type="email" id="customerEmail" th:field="*{customerEmail}" 
+                                   th:readonly="${user != null}" required>
+                            <span class="error" th:if="${#fields.hasErrors('customerEmail')}" th:errors="*{customerEmail}"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerPhone">Số điện thoại *</label>
+                        <input type="tel" id="customerPhone" th:field="*{customerPhone}" 
+                               th:readonly="${user != null}" required>
+                        <span class="error" th:if="${#fields.hasErrors('customerPhone')}" th:errors="*{customerPhone}"></span>
+                    </div>
+                    <div th:if="${user == null}" class="login-notice">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Vui lòng <a th:href="@{/login}">đăng nhập</a> để tự động điền thông tin</span>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3><i class="fas fa-users"></i> Số lượng người</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="adultCount">Số người lớn *</label>
+                            <input type="number" id="adultCount" th:field="*{adultCount}" min="1" max="50" value="1" required>
+                            <span class="error" th:if="${#fields.hasErrors('adultCount')}" th:errors="*{adultCount}"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="childCount">Số trẻ em (5-12 tuổi)</label>
+                            <input type="number" id="childCount" th:field="*{childCount}" min="0" max="20" value="0">
+                            <span class="error" th:if="${#fields.hasErrors('childCount')}" th:errors="*{childCount}"></span>
+                        </div>
+                    </div>
+                    <!-- Mã giảm giá (Thymeleaf, không dùng JS) -->
+                    <div class="promotion-section">
+                        <h4><i class="fas fa-tag"></i> Mã giảm giá</h4>
+                        <div class="promotion-input-group">
+                            <input type="text" name="promotionCode"
+                                   th:value="${appliedPromotion != null} ? ${appliedPromotion.code} : ''"
+                                   placeholder="Nhập mã giảm giá (nếu có)"
+                                   class="promotion-input">
+                            <button type="submit" class="btn-apply-promotion"
+                                    th:formaction="@{/page/promotions/apply}" formmethod="post"
+                                    name="action" value="applyPromotion" formnovalidate>
+                                <i class="fas fa-check"></i> Áp dụng
+                            </button>
+                        </div>
+                        <div class="promotion-message"
+                             th:if="${promotionMessage != null}"
+                             th:text="${promotionMessage}"
+                             th:classappend="${promotionSuccess} ? ' success' : ' error'">
+                        </div>
+                    </div>
+
+                    <div class="price-summary">
+                        <div class="price-item">
+                            <span>Người lớn:</span>
+                            <span id="adultPriceDisplay" th:text="${#numbers.formatDecimal(selectedSchedule.specialPrice != null ? selectedSchedule.specialPrice : tour.adultPrice, 0, 'COMMA', 0, 'POINT') + '₫'}">Adult Price</span>
+                            <!-- Hidden element để lưu giá đơn vị -->
+                            <span id="adultPrice" th:text="${#numbers.formatDecimal(selectedSchedule.specialPrice != null ? selectedSchedule.specialPrice : tour.adultPrice, 0, 'COMMA', 0, 'POINT') + '₫'}" style="display: none;">Adult Price</span>
+                        </div>
+                        <div class="price-item">
+                            <span>Trẻ em:</span>
+                            <span id="childPriceDisplay" th:text="'0₫'">Child Price</span>
+                            <!-- Hidden element để lưu giá đơn vị -->
+                            <span id="childPrice" th:text="${#numbers.formatDecimal(tour.childPrice, 0, 'COMMA', 0, 'POINT') + '₫'}" style="display: none;">Child Price</span>
+                        </div>
+                        <div class="price-item" id="discountRow" style="display: none;">
+                            <span>Giảm giá:</span>
+                            <span id="discountAmount" class="discount-amount">0₫</span>
+                        </div>
+                        <div class="price-item" th:if="${discountAmount != null}">
+                            <span>Giảm giá:</span>
+                            <span id="discountAmountValue" class="discount-amount" th:text="${#numbers.formatDecimal(discountAmount, 0, 'COMMA', 0, 'POINT') + '₫'}">0₫</span>
+                        </div>
+                        <div class="price-total">
+                            <span>Tổng tiền:</span>
+                            <span id="totalPrice"
+                                  th:text="${#numbers.formatDecimal(finalTotal != null ? finalTotal : (subtotal != null ? subtotal : ( (selectedSchedule != null and selectedSchedule.specialPrice != null) ? selectedSchedule.specialPrice : tour.adultPrice )), 0, 'COMMA', 0, 'POINT') + '₫'}">
+                                Total Price
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Participants Information -->
+                <div class="form-section">
+                    <h3><i class="fas fa-id-card"></i> Thông tin người tham gia</h3>
+                    <div id="participants-container">
+                        <!-- Participants will be added here dynamically -->
+                    </div>
+                    <button type="button" id="addParticipantBtn" class="btn-add-participant">
+                        <i class="fas fa-plus"></i> Thêm người tham gia
+                    </button>
+                </div>
+
+                <!-- Special Requests -->
+                <div class="form-section">
+                    <h3><i class="fas fa-comment"></i> Ghi chú đặc biệt</h3>
+                    <div class="form-group">
+                        <textarea id="specialRequests" th:field="*{specialRequests}" 
+                                  placeholder="Nhập yêu cầu đặc biệt (nếu có)..."></textarea>
+                        <span class="error" th:if="${#fields.hasErrors('specialRequests')}" th:errors="*{specialRequests}"></span>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-check"></i> Xác nhận đặt tour
+                    </button>
+                    <a th:href="@{/page/tours/{id}(id=${tour.id})}" class="btn-cancel">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <div th:replace="~{page/fragments/footer :: footer}"></div>
+
+    <script th:src="@{/page/js/booking-form.js}"></script>
+</body>
+</html> 

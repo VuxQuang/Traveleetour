@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${tour.title + ' | Travelee'}">Tour Detail | Travelee</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/page/css/homepage.css}">
+    <link rel="stylesheet" th:href="@{/page/css/tour-detail.css}">
+    <link rel="stylesheet" th:href="@{/page/css/reviews.css}">
+</head>
+<body>
+<div th:replace="~{/page/fragments/header :: header}"></div>
+<!-- Main Content -->
+<main class="main-content">
+    <div class="tour-detail-container">
+        <!-- Tour Header -->
+        <div class="tour-header" th:if="${tour != null}">
+            <!-- Availability Alert -->
+            <div th:if="${tour.schedules != null and tour.schedules.size() > 0}" class="availability-alert">
+                <div class="alert available">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Tour đang mở đặt với nhiều chỗ trống</span>
+                </div>
+            </div>
+            
+            <div class="tour-title">
+                <h1 th:text="${tour.title != null ? tour.title : 'Tour Title'}">Tour Title</h1>
+                <div class="tour-badges">
+                    <span th:if="${tour.featured != null and tour.featured}" class="badge featured"><i class="fas fa-star"></i> Nổi bật</span>
+                    <span th:if="${tour.isHot != null and tour.isHot}" class="badge hot"><i class="fas fa-fire"></i> Hot</span>
+                    <span th:if="${tour.hasPromotion != null and tour.hasPromotion}" class="badge promo"><i class="fas fa-tags"></i> Khuyến mãi</span>
+                </div>
+            </div>
+            <div class="tour-meta">
+                <div class="meta-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span th:text="${(tour.departure != null ? tour.departure : '') + ' → ' + (tour.destination != null ? tour.destination : '')}">Route</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span th:text="${tour.duration != null ? tour.duration + ' ngày ' + (tour.duration - 1) + ' đêm' : 'Duration'}">Duration</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-users"></i>
+                    <span th:text="${tour.maxParticipants != null ? 'Tối đa ' + tour.maxParticipants + ' khách' : 'Max Participants'}">Max Participants</span>
+                </div>
+                <div class="meta-item" th:if="${tour.schedules != null and tour.schedules.size() > 0}">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Lịch trình khởi hành</span>
+                </div>
+                <div class="meta-item">
+                    <span th:class="${'status-badge ' + (tour.status != null and tour.status == 'active' ? 'active' : 'inactive')}" 
+                          th:text="${tour.status != null and tour.status == 'active' ? 'Đang mở đặt' : 'Tạm ngưng'}">Status</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tour Images -->
+        <div class="tour-images" th:if="${tour != null}">
+            <div class="main-image">
+                <img th:src="${tour.images != null and tour.images.size() > 0 ? tour.images.iterator().next().imageUrl : '/page/imgs/default-tour.jpg'}" 
+                     th:alt="${tour.title != null ? tour.title : 'Tour'}" id="mainImage">
+                <div class="image-overlay">
+                    <button class="btn-prev"><i class="fas fa-chevron-left"></i></button>
+                    <button class="btn-next"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="image-thumbnails" th:if="${tour.images != null and tour.images.size() > 0}">
+                <div th:each="image, iterStat : ${tour.images}" 
+                     th:class="${'thumbnail ' + (iterStat.first ? 'active' : '')}" 
+                     th:onclick="'changeImage(' + ${iterStat.index} + ')'">
+                    <img th:src="${image.imageUrl}" th:alt="'Tour image ' + ${iterStat.index + 1}">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tour Content -->
+        <div class="tour-content" th:if="${tour != null}">
+            <div class="content-left">
+                <!-- Tour Description -->
+                <section class="tour-section">
+                    <h2><i class="fas fa-align-left"></i> Mô tả tour</h2>
+                    <p class="tour-description" th:text="${tour.description != null ? tour.description : 'Tour description'}">Tour description</p>
+                    <div th:if="${tour.highlights != null and tour.highlights != ''}" class="tour-highlights">
+                        <h3><i class="fas fa-star"></i> Điểm nổi bật</h3>
+                        <div th:utext="${tour.highlights}">Highlights</div>
+                    </div>
+                </section>
+
+                <!-- Tour Itinerary -->
+                <section th:if="${tour.itineraries != null and tour.itineraries.size() > 0}" class="tour-section">
+                    <h2><i class="fas fa-route"></i> Lịch trình chi tiết</h2>
+                    <div class="itinerary-list">
+                        <div th:each="itinerary : ${tour.itineraries}" class="itinerary-day">
+                            <div class="day-header">
+                                <div class="day-number" th:text="${itinerary.dayNumber != null ? itinerary.dayNumber : '1'}">1</div>
+                                <div class="day-info">
+                                    <h3 th:text="${itinerary.title != null ? itinerary.title : 'Day Title'}">Day Title</h3>
+                                    <div class="day-meta">
+                                        <span th:if="${itinerary.meals != null and itinerary.meals != ''}"><i class="fas fa-utensils"></i> <span th:text="${itinerary.meals}">Meals</span></span>
+                                        <span th:if="${itinerary.accommodation != null and itinerary.accommodation != ''}"><i class="fas fa-bed"></i> <span th:text="${itinerary.accommodation}">Accommodation</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="day-content">
+                                <div th:if="${itinerary.description != null and itinerary.description != ''}" class="description-content" th:utext="${itinerary.description}"></div>
+                                <div th:if="${itinerary.activities != null and itinerary.activities != ''}" class="activities-content" th:utext="${itinerary.activities}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tour Includes/Excludes -->
+                <section class="tour-section">
+                    <div class="includes-excludes">
+                        <div th:if="${tour.includes != null and tour.includes != ''}" class="includes">
+                            <h3><i class="fas fa-check-circle"></i> Bao gồm</h3>
+                            <div class="includes-content" th:utext="${tour.includes}"></div>
+                        </div>
+                        <div th:if="${tour.excludes != null and tour.excludes != ''}" class="excludes">
+                            <h3><i class="fas fa-times-circle"></i> Không bao gồm</h3>
+                            <div class="excludes-content" th:utext="${tour.excludes}"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tour Terms - Fix cứng theo tour ID -->
+                <section class="tour-section">
+                    <h2><i class="fas fa-file-contract"></i> Điều khoản & Lưu ý</h2>
+                    <div class="tour-terms">
+                        <!-- Terms cho tour ID 1 -->
+                        <div th:if="${tour.id == 1}" class="term-item">
+                            <h4><i class="fas fa-credit-card"></i> Thanh toán</h4>
+                            <p>Đặt cọc 50% khi đăng ký tour, thanh toán 100% trước ngày khởi hành 3 ngày.</p>
+                        </div>
+                        <div th:if="${tour.id == 1}" class="term-item">
+                            <h4><i class="fas fa-calendar-times"></i> Hủy tour</h4>
+                            <p>Hủy trước 7 ngày: hoàn 100% tiền cọc. Hủy trước 3 ngày: hoàn 50% tiền cọc. Hủy trong vòng 3 ngày: không hoàn tiền.</p>
+                        </div>
+                        <div th:if="${tour.id == 1}" class="term-item">
+                            <h4><i class="fas fa-info-circle"></i> Lưu ý</h4>
+                            <p>Mang theo giấy tờ tùy thân, trang phục phù hợp thời tiết, thuốc cá nhân nếu cần.</p>
+                        </div>
+
+                        <!-- Terms cho tour ID 2 -->
+                        <div th:if="${tour.id == 2}" class="term-item">
+                            <h4><i class="fas fa-credit-card"></i> Thanh toán</h4>
+                            <p>Đặt cọc 30% khi đăng ký tour, thanh toán 100% trước ngày khởi hành 5 ngày.</p>
+                        </div>
+                        <div th:if="${tour.id == 2}" class="term-item">
+                            <h4><i class="fas fa-calendar-times"></i> Hủy tour</h4>
+                            <p>Hủy trước 10 ngày: hoàn 100% tiền cọc. Hủy trước 5 ngày: hoàn 70% tiền cọc. Hủy trong vòng 5 ngày: không hoàn tiền.</p>
+                        </div>
+                        <div th:if="${tour.id == 2}" class="term-item">
+                            <h4><i class="fas fa-info-circle"></i> Lưu ý</h4>
+                            <p>Tour phù hợp với mọi lứa tuổi, mang theo áo ấm và giày leo núi.</p>
+                        </div>
+
+                        <!-- Terms mặc định cho các tour khác -->
+                        <div th:if="${tour.id != 1 and tour.id != 2}" class="term-item">
+                            <h4><i class="fas fa-credit-card"></i> Thanh toán</h4>
+                            <p>Đặt cọc 40% khi đăng ký tour, thanh toán 100% trước ngày khởi hành 7 ngày.</p>
+                        </div>
+                        <div th:if="${tour.id != 1 and tour.id != 2}" class="term-item">
+                            <h4><i class="fas fa-calendar-times"></i> Hủy tour</h4>
+                            <p>Hủy trước 14 ngày: hoàn 100% tiền cọc. Hủy trước 7 ngày: hoàn 60% tiền cọc. Hủy trong vòng 7 ngày: không hoàn tiền.</p>
+                        </div>
+                        <div th:if="${tour.id != 1 and tour.id != 2}" class="term-item">
+                            <h4><i class="fas fa-info-circle"></i> Lưu ý</h4>
+                            <p>Vui lòng mang theo giấy tờ tùy thân và trang phục phù hợp với địa điểm tham quan.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Flash Messages -->
+                <div th:if="${success}" class="alert alert-success" style="margin-bottom: 20px; padding: 15px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 5px;">
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${success}">Thành công</span>
+                </div>
+                <div th:if="${error}" class="alert alert-danger" style="margin-bottom: 20px; padding: 15px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 5px;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span th:text="${error}">Lỗi</span>
+                </div>
+
+                <!-- Reviews Section -->
+                <section class="tour-section reviews-section">
+                    <h2><i class="fas fa-star"></i> Đánh giá từ khách hàng</h2>
+                    
+                    <!-- Rating Summary -->
+                    <div class="rating-summary" th:if="${reviewCount > 0}">
+                        <div class="rating-overview">
+                            <div class="average-rating">
+                                <span class="rating-number" th:text="${averageRating != null ? #numbers.formatDecimal(averageRating, 1, 1) : '0.0'}">0.0</span>
+                                <div class="stars">
+                                    <i th:each="i : ${#numbers.sequence(1, 5)}" 
+                                       th:class="${'fas fa-star' + (i <= (averageRating != null ? averageRating : 0) ? ' active' : '')}"></i>
+                                </div>
+                                <span class="review-count" th:text="'(' + ${reviewCount} + ' đánh giá)'">(0 đánh giá)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Review Form - Chỉ hiển thị cho user đã thanh toán -->
+                    <div class="review-form-container" id="reviewFormContainer" th:if="${canReview}">
+                        <h3>Viết đánh giá của bạn</h3>
+                        <form th:action="@{/reviews/create}" method="post" class="review-form">
+                            <input type="hidden" name="tourId" th:value="${tour.id}">
+                            <div class="form-group">
+                                <label>Đánh giá của bạn:</label>
+                                <div class="rating-input">
+                                    <div class="stars">
+                                        <i class="far fa-star" data-rating="1"></i>
+                                        <i class="far fa-star" data-rating="2"></i>
+                                        <i class="far fa-star" data-rating="3"></i>
+                                        <i class="far fa-star" data-rating="4"></i>
+                                        <i class="far fa-star" data-rating="5"></i>
+                                    </div>
+                                    <span class="rating-number">0</span>
+                                </div>
+                                <input type="hidden" id="rating" name="rating" value="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="comment">Nhận xét:</label>
+                                <textarea id="comment" name="comment" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về tour này..." required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Thông báo cho user chưa thanh toán -->
+                    <div class="review-notice" th:if="${!canReview}">
+                        <div class="notice-content">
+                            <i class="fas fa-info-circle"></i>
+                            <h3>Đánh giá tour</h3>
+                            <p>Bạn cần đặt và thanh toán tour này để có thể để lại đánh giá.</p>
+                            <a th:href="@{/page/tours/{id}/book(id=${tour.id})}" class="btn btn-primary">
+                                <i class="fas fa-calendar-check"></i> Đặt tour ngay
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- User's Reviews (nếu user đã đăng nhập và có reviews) -->
+                    <div class="user-reviews" th:if="${userReviews != null and !userReviews.isEmpty()}">
+                        <h3><i class="fas fa-user"></i> Đánh giá của bạn</h3>
+                        <div class="reviews-list">
+                            <div th:each="review : ${userReviews}" class="review-item user-review">
+                                <div class="review-header">
+                                    <div class="reviewer-info">
+                                        <div class="reviewer-name" th:text="${review.displayName}">Tên khách hàng</div>
+                                        <div class="review-date" th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày</div>
+                                    </div>
+                                    <div class="review-rating">
+                                        <div class="stars">
+                                            <i th:each="i : ${#numbers.sequence(1, 5)}" 
+                                               th:class="${'fas fa-star' + (i <= review.rating ? ' active' : '')}"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="review-content">
+                                    <p th:text="${review.comment}">Nội dung đánh giá</p>
+                                </div>
+                                <div class="review-actions">
+                                    <form th:action="@{/reviews/update/{id}(id=${review.id})}" method="post" style="display: inline;">
+                                        <input type="hidden" name="tourId" th:value="${tour.id}">
+                                        <input type="hidden" name="rating" th:value="${review.rating}">
+                                        <input type="hidden" name="comment" th:value="${review.comment}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Chỉnh sửa
+                                        </button>
+                                    </form>
+                                    <form th:action="@{/reviews/delete/{id}(id=${review.id})}" method="post" style="display: inline;" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?')">
+                                        <input type="hidden" name="tourId" th:value="${tour.id}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i> Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- All Reviews List -->
+                    <div class="reviews-list" th:if="${reviews != null and !reviews.isEmpty()}">
+                        <h3><i class="fas fa-star"></i> Tất cả đánh giá</h3>
+                        <div th:each="review : ${reviews}" class="review-item">
+                            <div class="review-header">
+                                <div class="reviewer-info">
+                                    <div class="reviewer-name" th:text="${review.displayName}">Tên khách hàng</div>
+                                    <div class="review-date" th:text="${#temporals.format(review.createdAt, 'dd/MM/yyyy HH:mm')}">Ngày</div>
+                                </div>
+                                <div class="review-rating">
+                                    <div class="stars">
+                                        <i th:each="i : ${#numbers.sequence(1, 5)}" 
+                                           th:class="${'fas fa-star' + (i <= review.rating ? ' active' : '')}"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="review-content">
+                                <p th:text="${review.comment}">Nội dung đánh giá</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Reviews Message -->
+                    <div class="no-reviews" th:if="${reviews == null or reviews.isEmpty()}">
+                        <div class="no-reviews-content">
+                            <i class="fas fa-star"></i>
+                            <h3>Chưa có đánh giá nào</h3>
+                            <p>Hãy là người đầu tiên đánh giá tour này!</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="content-right">
+                <!-- Price Card -->
+                <div class="price-card">
+                    <div class="price-header">
+                        <h3>Giá tour</h3>
+                        <div th:if="${tour.hasPromotion}" class="price-old" th:text="${#numbers.formatDecimal(tour.adultPrice * 1.1, 0, 'COMMA', 0, 'POINT') + '₫'}">Old Price</div>
+                    </div>
+                    <div class="price-main">
+                        <div class="price-adult">
+                            <span class="price-label">Người lớn</span>
+                            <span class="price-value" th:text="${#numbers.formatDecimal(tour.adultPrice, 0, 'COMMA', 0, 'POINT') + '₫'}">Adult Price</span>
+                        </div>
+                        <div class="price-child">
+                            <span class="price-label">Trẻ em (5-12 tuổi)</span>
+                            <span class="price-value" th:text="${#numbers.formatDecimal(tour.childPrice, 0, 'COMMA', 0, 'POINT') + '₫'}">Child Price</span>
+                        </div>
+                        <div class="price-infant">
+                            <span class="price-label">Trẻ em (dưới 5 tuổi)</span>
+                            <span class="price-value">Miễn phí</span>
+                        </div>
+                    </div>
+                    <div th:if="${tour.hasPromotion}" class="price-savings">
+                        <i class="fas fa-gift"></i>
+                        <span th:text="'Tiết kiệm ' + ${#numbers.formatDecimal(tour.adultPrice * 0.1, 0, 'COMMA', 0, 'POINT') + '₫/người'}">Savings</span>
+                    </div>
+                    <button class="btn-book-now" onclick="bookTourWithSchedule()" id="bookNowBtn">
+                        <i class="fas fa-calendar-check"></i>
+                        Đặt tour ngay
+                    </button>
+                    <div class="booking-note" th:if="${tour.schedules != null and tour.schedules.size() > 0}">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Chọn ngày khởi hành phù hợp để đặt tour</span>
+                    </div>
+                </div>
+
+                <!-- Schedule Card -->
+                <div th:if="${tour.schedules.size() > 0}" class="schedule-card">
+                    <h3><i class="fas fa-calendar-alt"></i> Lịch khởi hành</h3>
+                    <div class="schedule-list">
+                        <div th:each="schedule : ${tour.schedules}" class="schedule-item">
+                            <div class="schedule-dates">
+                                <div class="departure">
+                                    <i class="fas fa-plane-departure"></i>
+                                    <span th:text="${#temporals.format(schedule.departureDate, 'dd/MM/yyyy')}">Departure Date</span>
+                                </div>
+                                <div class="return">
+                                    <i class="fas fa-plane-arrival"></i>
+                                    <span th:text="${#temporals.format(schedule.returnDate, 'dd/MM/yyyy')}">Return Date</span>
+                                </div>
+                            </div>
+                            <div class="schedule-price">
+                                <span th:if="${schedule.specialPrice}" class="special-price" 
+                                      th:text="${#numbers.formatDecimal(schedule.specialPrice, 0, 'COMMA', 0, 'POINT') + '₫'}">Special Price</span>
+                                <span th:unless="${schedule.specialPrice}" class="special-price" 
+                                      th:text="${#numbers.formatDecimal(tour.adultPrice, 0, 'COMMA', 0, 'POINT') + '₫'}">Regular Price</span>
+                            </div>
+                            <div class="schedule-slots">
+                                <div class="slots-info">
+                                    <i class="fas fa-users"></i>
+                                    <span class="slots-count" 
+                                          th:text="${schedule.availableSlots != null ? 'Còn ' + schedule.availableSlots + ' chỗ' : 'Không giới hạn chỗ'}">Available Slots</span>
+                                </div>
+                            </div>
+                            <button class="btn-select-date available" 
+                                    th:onclick="'selectSchedule(' + ${schedule.id} + ')'"
+                                    th:data-schedule-id="${schedule.id}"
+                                    th:data-promotional-price="${schedule.specialPrice != null ? schedule.specialPrice : tour.adultPrice}">
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Chọn ngày này</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Card -->
+                <div class="contact-card">
+                    <h3><i class="fas fa-headset"></i> Hỗ trợ đặt tour</h3>
+                    <div class="contact-info2">
+                        <div class="contact-item">
+                            <i class="fas fa-phone"></i>
+                            <div>
+                                <span class="contact-label">Hotline</span>
+                                <span class="contact-value">1900 1234</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <span class="contact-label">Email</span>
+                                <span class="contact-value">booking@travelee.vn</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fab fa-facebook-messenger"></i>
+                            <div>
+                                <span class="contact-label">Messenger</span>
+                                <span class="contact-value">Travelee Support</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</main>
+
+<script th:src="@{/page/js/tour-detail.js}"></script>
+<script th:src="@{/page/js/reviews.js}"></script>
+</body>
+</html>

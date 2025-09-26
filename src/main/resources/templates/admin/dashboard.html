@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Travelee Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/admin/css/dashboard-style.css}">
+    <style>
+        .revenue-chart-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .chart-header h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .chart-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chart-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+
+        .chart-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-stats {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .chart-stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        #revenueChart {
+            max-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chart-stats {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Header -->
+    <div th:replace="~{/admin/fragments/header :: header}"></div>
+
+    <!-- Sidebar -->
+    <div th:replace="~{/admin/fragments/sidebar :: aside}"></div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1>Dashboard</h1>
+            <p>Chào mừng bạn trở lại, Admin!</p>
+        </div>
+
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 th:text="${totalUsers}"></h3>
+                    <p>Tổng số người dùng</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 th:text="${totalTours}"></h3>
+                    <p>Tours hiện có</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 th:text="${todayBookings}"></h3>
+                    <p>Đặt tour hôm nay</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>4.8</h3>
+                    <p>Đánh giá trung bình</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Biểu đồ doanh thu theo ngày -->
+        <div class="revenue-chart-section">
+            <div class="chart-header">
+                <h2>Biểu đồ doanh thu theo ngày</h2>
+                <div class="chart-controls">
+                    <select id="chartYearSelect" class="chart-select">
+                        <option value="2024" th:selected="${currentYear == 2024}">2024</option>
+                        <option value="2025" th:selected="${currentYear == 2025}">2025</option>
+                        <option value="2026" th:selected="${currentYear == 2026}">2026</option>
+                    </select>
+                    <select id="chartMonthSelect" class="chart-select">
+                        <option value="1" th:selected="${currentMonth == 1}">Tháng 1</option>
+                        <option value="2" th:selected="${currentMonth == 2}">Tháng 2</option>
+                        <option value="3" th:selected="${currentMonth == 3}">Tháng 3</option>
+                        <option value="4" th:selected="${currentMonth == 4}">Tháng 4</option>
+                        <option value="5" th:selected="${currentMonth == 5}">Tháng 5</option>
+                        <option value="6" th:selected="${currentMonth == 6}">Tháng 6</option>
+                        <option value="7" th:selected="${currentMonth == 7}">Tháng 7</option>
+                        <option value="8" th:selected="${currentMonth == 8}">Tháng 8</option>
+                        <option value="9" th:selected="${currentMonth == 9}">Tháng 9</option>
+                        <option value="10" th:selected="${currentMonth == 10}">Tháng 10</option>
+                        <option value="11" th:selected="${currentMonth == 11}">Tháng 11</option>
+                        <option value="12" th:selected="${currentMonth == 12}">Tháng 12</option>
+                    </select>
+                </div>
+            </div>
+            <div class="chart-content">
+                <div class="chart-stats">
+                    <div class="chart-stat-item">
+                        <span class="stat-label">Tổng doanh thu tháng:</span>
+                        <span class="stat-value" id="monthlyRevenueDisplay">0 VNĐ</span>
+                    </div>
+                    <div class="chart-stat-item">
+                        <span class="stat-label">Số tour đã đặt:</span>
+                        <span class="stat-value" id="monthlyBookingsDisplay">0</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueChart" width="800" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="content-section">
+                <h2>Hoạt động gần đây</h2>
+                <div class="activity-list">
+                    <div th:if="${recentActivities != null and !recentActivities.isEmpty()}" th:each="activity : ${recentActivities}">
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i th:class="${activity.icon}"></i>
+                            </div>
+                            <div class="activity-info">
+                                <p th:text="${activity.title} + ': ' + ${activity.description}"></p>
+                                <span class="activity-time" th:text="${activity.timeAgo}"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${recentActivities == null or recentActivities.isEmpty()}">
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="activity-info">
+                                <p>Chưa có hoạt động nào gần đây</p>
+                                <span class="activity-time">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <div th:replace="~{/admin/fragments/footer :: footer}"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:src="@{/admin/js/revenue-chart.js}"></script>
+<script th:src="@{/admin/js/dashboard-script.js}"></script>
+
+<!-- Pass data from server to JavaScript -->
+<script>
+    // Make server data available to revenue-chart.js
+    window.initialMonthlyStats = /*[[${monthlyStats}]]*/ [];
+    window.initialMonthlyRevenue = /*[[${monthlyRevenue}]]*/ 0;
+    window.initialMonthlyBookings = /*[[${monthlyBookings}]]*/ 0;
+    window.currentYear = /*[[${currentYear}]]*/ new Date().getFullYear();
+    window.currentMonth = /*[[${currentMonth}]]*/ new Date().getMonth() + 1;
+</script>
+</body>
+</html>
